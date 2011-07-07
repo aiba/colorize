@@ -1,0 +1,5 @@
+# The default config file colors stdout as normal white on black and
+# default stderr as bright red on black.
+
+<stdout> = (bg:black fg:white)
+<stderr> = (bg:black fg:red attr:bright)

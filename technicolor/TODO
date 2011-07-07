@@ -1,0 +1,14 @@
+
+* create some test cases, especially for the stuff that parses the
+  command-line and config files
+
+* detect when the output is being piped, and suppress all color escape sequences
+
+* autoconf
+
+* create a config file for config files (technicolor cat --config technicolor_config_config technicolor_config_config)
+
+* Before "release":
+  - add README
+  - test on linux
+

@@ -1,0 +1,12 @@
+
+<stdout> = (fg:white)
+<stderr> = (fg:red)
+
+^([^\:]+)(\:)(\d+)(\:\s)(error\:\s)(.*)$ = (fg:magenta) (fg:white) (fg:cyan) (fg:white) (fg:yellow) (attr:reset)
+
+^([^\:]+)(\:\s)(In function)([^\:]+)(\:)$ = (fg:magenta) (fg:white) (fg:white) (fg:green) (fg:white)
+
+^([^\:]+)(\:\s)(At global scope)(\:)$ = (fg:magenta) (fg:white) (fg:white) (fg:white)
+
+^([^\:]+)(\:)(.*)$ = (fg:magenta) (fg:white) (attr:reset)
+

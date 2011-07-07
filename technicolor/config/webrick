@@ -1,0 +1,5 @@
+<stdout> = (fg:white)
+<stderr> = (fg:red)
+
+^(\[[^\]]+\]\s)(\S+\s)(.*)$ = (fg:magenta) (fg:yellow) (attr:reset)
+

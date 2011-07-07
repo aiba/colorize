@@ -1,0 +1,6 @@
+
+all: technicolor
+
+technicolor:
+	g++ technicolor.cc -lcurses -o technicolor
+

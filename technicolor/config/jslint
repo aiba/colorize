@@ -1,0 +1,5 @@
+<stdout> = (fg:white)
+<stderr> = (fg:red)
+
+^(Lint at line )(\d+)( character )(\d+)(\:)(.*)$ = (fg:yellow) (fg:cyan) (fg:yellow) (fg:cyan) (fg:red) (fg:red)
+

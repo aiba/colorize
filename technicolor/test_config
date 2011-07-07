@@ -1,0 +1,7 @@
+# This is a test config file.
+
+<stdout> = (bg:black fg:white)
+<stderr> = (bg:black fg:red attr:bright)
+
+^([^\:]+\:)(.*)$ = (fg:magenta) (fg:yellow)
+

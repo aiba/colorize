@@ -1,0 +1,230 @@
+// Copyright 2007 Aaron B. Iba
+//
+// Author: Aaron B. Iba (aiba@alum.mit.edu)
+//
+// Notes:
+//  * awesome color reference: http://linuxgazette.net/issue65/padala.html
+//  * pipes: http://www.unixwiz.net/techtips/remap-pipe-fds.html
+
+#include <assert.h>
+#include <iostream>
+#include <list>
+#include <stdio.h>
+#include <string>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+using namespace std;
+
+//----------------------------------------------------------------
+// color constants
+//----------------------------------------------------------------
+
+#define RESET		0
+#define BRIGHT 		1
+#define DIM		2
+#define UNDERLINE 	3
+#define BLINK		4
+#define REVERSE		7
+#define HIDDEN		8
+
+#define BLACK 		0
+#define RED		1
+#define GREEN		2
+#define YELLOW		3
+#define BLUE		4
+#define MAGENTA		5
+#define CYAN		6
+#define	WHITE		7
+
+//----------------------------------------------------------------
+// globals
+//----------------------------------------------------------------
+
+static const bool         DEBUG                = true;
+static const suseconds_t  SELECT_TIMEOUT_USECS = 500;
+
+//----------------------------------------------------------------
+// struct technicolor_config
+//----------------------------------------------------------------
+struct technicolor_config {
+  list<string> stdout_props;
+  list<string> stderr_props;
+
+  // TODO: store list of (regexp, proplist) pairs as well.
+};
+
+//----------------------------------------------------------------
+// prototypes
+//----------------------------------------------------------------
+
+void parse_command_line(char** argv, struct technicolor_config* config,
+			char*** child_argv);
+bool read_char_if_available(int input_fd, string& line_buffer);
+bool flush_line_if_complete(string& line_buffer, FILE* output_file);
+void write_colored_line(const string& line_buffer, FILE* output_file);
+int bytes_ready_to_read(int fd);
+void debug(string message);
+void textcolor(FILE* f, int attr, int fg, int bg);
+void textcolor_reset(FILE* f);
+
+//----------------------------------------------------------------
+// main
+//----------------------------------------------------------------
+
+int main(int argc, char** argv) {
+  assert (argv[argc] == NULL);
+
+  if (argc < 2) {
+    cerr << "Error: must pass technicolor at least 1 argument (command to execute)";
+    return -1;
+  }
+
+  struct technicolor_config config;
+  char** child_argv;
+  parse_command_line(argv, &config, &child_argv);
+
+  int stdout_pipe[2];
+  int stderr_pipe[2];
+
+  assert (pipe(stdout_pipe) == 0);
+  assert (pipe(stderr_pipe) == 0);
+
+  // for child process
+  pid_t childpid = fork();
+  assert (childpid >= 0);
+
+  if (childpid == 0) {
+    // child process
+
+    close(stdout_pipe[0]);
+    close(stderr_pipe[0]);
+    
+    dup2(stdout_pipe[1], fileno(stdout));
+    close(stdout_pipe[1]);
+    
+    dup2(stderr_pipe[1], fileno(stderr));
+    close(stderr_pipe[1]);
+
+    execvp(argv[1], child_argv);
+    return 0;
+  }
+
+  // parent process
+  close(stdout_pipe[1]);
+  close(stderr_pipe[1]);
+
+  string stdout_line;
+  string stderr_line;
+
+  bool stdout_closed = false;
+  bool stderr_closed = false;
+
+  while (true) {
+    stdout_closed = read_char_if_available(stdout_pipe[0], stdout_line);
+    stderr_closed = read_char_if_available(stderr_pipe[0], stderr_line);
+
+    flush_line_if_complete(stdout_line, stdout);
+    flush_line_if_complete(stderr_line, stderr);
+    
+    if (stdout_closed && stderr_closed) {
+      if (stdout_line.length() > 0) { fprintf(stdout, stdout_line.c_str()); }
+      if (stderr_line.length() > 0) { fprintf(stderr, stderr_line.c_str()); }
+      debug("stdout and stderr both closed.  done!");
+      break;
+    }
+  }
+}
+
+//----------------------------------------------------------------
+// parse_command_line
+//----------------------------------------------------------------
+void parse_command_line(char** argv,
+			struct technicolor_config* config,
+			char*** child_argv) {
+  *child_argv = &argv[1];
+}
+
+//----------------------------------------------------------------
+// read_char_if_available
+//----------------------------------------------------------------
+bool read_char_if_available(int input_fd, string& line_buffer) {
+  int bytes_ready = bytes_ready_to_read(input_fd);
+  if (bytes_ready > 0) {
+    char c;
+    ssize_t bytes_read = read(input_fd, (void*)&c, 1);
+    if (bytes_read < 1) {
+      // End of input file.
+      return true;
+    }
+    line_buffer += c;
+  }
+  return false;
+}
+
+//----------------------------------------------------------------
+// flush_line_if_complete
+//----------------------------------------------------------------
+bool flush_line_if_complete(string& line_buffer, FILE* output_file) {
+  if ((line_buffer.length() > 0)
+      && (line_buffer[line_buffer.length()-1] == '\n')) {
+    write_colored_line(line_buffer, output_file);
+    line_buffer = "";
+  }
+}
+
+//----------------------------------------------------------------
+// write_colored_line
+//----------------------------------------------------------------
+void write_colored_line(const string& line_buffer, FILE* output_file) {
+  if (output_file == stderr) {
+    textcolor(output_file, RESET, RED, BLACK);
+  } else {
+    textcolor(output_file, RESET, YELLOW, BLACK);
+  }
+
+  fprintf(output_file, line_buffer.c_str());
+
+  textcolor_reset(output_file);
+}
+
+//----------------------------------------------------------------
+// bytes_ready_to_read
+//
+//  Returns the number of bytes that are ready to read from the
+//  given file descriptor.
+//----------------------------------------------------------------
+int bytes_ready_to_read(int fd) {
+  fd_set read_fds;
+  FD_ZERO(&read_fds);
+  FD_SET(fd, &read_fds);
+  int nfds = fd + 1;  // max(fds) + 1
+  struct timeval timeout = { 0, SELECT_TIMEOUT_USECS };
+
+  return select(nfds, &read_fds, NULL, NULL, &timeout);
+}
+
+//----------------------------------------------------------------
+// debug
+//----------------------------------------------------------------
+void debug(string message) {
+  if (DEBUG) {
+    cout << message << endl;
+  }
+}
+
+//----------------------------------------------------------------
+// textcolor
+//  Taken from [http://linuxgazette.net/issue65/padala.html]
+//----------------------------------------------------------------
+void textcolor(FILE* f, int attr, int fg, int bg) {
+  char command[13];
+  sprintf(command, "%c[%d;%d;%dm", 0x1B, attr, (fg + 30), (bg + 40));
+  fprintf(f, command);
+}
+
+void textcolor_reset(FILE* f) {
+  fprintf(f, "%c[0m", 0x1B);
+}
+

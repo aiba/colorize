@@ -1,0 +1,19 @@
+
+<stdout> = (fg:white)
+<stderr> = (fg:red)
+
+^(\[APPJET_INFO\])(.*)$ = (fg:magenta) (fg:cyan)
+^(\[APPJET_ERROR\])(.*)$ = (fg:magenta) (fg:red)
+^(\[APPJET_FATAL_ERROR\])(.*)$ = (fg:magenta) (fg:red)
+
+^(\[[^\]]+\]\s)(\[ERROR\])(.*helma-[\.\d]+\/)([^\s]+\.js\#)(\d+)(.*)$ = (fg:magenta) (fg:magenta) (fg:red) (fg:magenta) (fg:cyan) (fg:red)
+^(\[[^\]]+\]\s)(\[ERROR\])(.*)$ = (fg:magenta) (fg:magenta) (fg:red)
+^(\[[^\]]+\]\s)(\[INFO\])(.*)$ = (fg:yellow) (fg:yellow) (fg:white)
+
+^(\[[^\]]+\])(.*)$ = (fg:yellow) (fg:white)
+
+# ^([^\:]+)(\:)(\d+)(\:\s)(error\:\s)(.*)$ = (fg:magenta) (fg:white) (fg:cyan) (fg:white) (fg:yellow) (attr:reset)
+# ^([^\:]+)(\:\s)(In function)([^\:]+)(\:)$ = (fg:magenta) (fg:white) (fg:white) (fg:green) (fg:white)
+# ^([^\:]+)(\:\s)(At global scope)(\:)$ = (fg:magenta) (fg:white) (fg:white) (fg:white)
+# ^([^\:]+)(\:)(.*)$ = (fg:magenta) (fg:white) (attr:reset)
+

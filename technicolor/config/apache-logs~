@@ -1,0 +1,9 @@
+<stdout> = (normal white)
+<stderr> = (normal red)
+
+# Standard apache log line.
+
+^(\S+)\s(\S+)\s(\S+)\s(\[.*\])\s\"(\S+)\s([^\"]+)\"\s(\S+)\s\S+\s\"([^\"]+)\"(.*)$ = (yellow) (white) (white) (blue) (white) (green) (cyan) (yellow) (magenta)
+
+# TODO(aiba): write some regexps that match other common apache log formats.
+

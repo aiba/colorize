@@ -1,0 +1,5 @@
+# this should match the default apache configuration for combined_log type.
+# TODO: add more regexps that match other common appache log formats?
+
+^(\S+\s)([^\]]+)(\[[^\]]+\]\s)(\"[^\"]+\"\s)(\S+\s)(\S+)$ = (fg:magenta) (fg:white) (fg:blue) (fg:yellow) (fg:green) (fg:white)
+

@@ -1,0 +1,7 @@
+
+<stdout> = (fg:white)
+<stderr> = (fg:white)
+
+^([^\:]+)(\:)(\d+)(\:\s)(.*)$ = (fg:magenta) (fg:white) (fg:cyan) (fg:white) (attr:reset)
+
+^(\d+\s)(error)$ = (fg:yellow) (fg:red)
